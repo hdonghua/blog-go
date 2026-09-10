@@ -16,16 +16,18 @@ type User struct {
 }
 
 type Category struct {
-	ID   int64
-	Name string
+	ID        int64
+	Name      string
+	SortOrder int
 }
 
 // CategoryCount 分类及文章数量（前台分类导航用）。
 type CategoryCount struct {
-	ID     int64
-	Name   string
-	Count  int
-	Active bool
+	ID        int64
+	Name      string
+	SortOrder int
+	Count     int
+	Active    bool
 }
 
 type Post struct {

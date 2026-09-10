@@ -12,32 +12,47 @@
 <main class="container">
     <section class="panel">
         <h2>添加分类</h2>
+        {{if .Saved}}<div class="ok">分类已保存</div>{{end}}
         {{if .Error}}
             {{if eq .Error "duplicate"}}<div class="alert">该分类已存在</div>
-            {{else if eq .Error "empty"}}<div class="alert">分类名不能为空</div>{{end}}
+            {{else if eq .Error "empty"}}<div class="alert">分类名不能为空</div>
+            {{else if eq .Error "long"}}<div class="alert">分类名不能超过 30 个字</div>
+            {{else if eq .Error "sort"}}<div class="alert">排序号必须是整数</div>{{end}}
         {{end}}
         <form method="post" action="/admin/categories" class="cat-form">
             <input type="text" name="name" placeholder="分类名称，如：技术 / 生活" required maxlength="30">
+            <input type="number" name="sort_order" value="0" placeholder="排序号" title="数字越小越靠前">
             <button type="submit" class="btn-primary">添加</button>
         </form>
+        <p class="field-tip">排序号越小越靠前，前台导航和后台下拉都会按此顺序显示</p>
     </section>
 
     <section class="panel">
         <h2>全部分类（{{len .Cats}}）</h2>
         {{if .Cats}}
+        <form method="post" action="/admin/categories/update">
         <table>
             <thead>
-            <tr><th>ID</th><th>名称</th></tr>
+            <tr><th>ID</th><th>排序号</th><th>名称</th></tr>
             </thead>
             <tbody>
             {{range .Cats}}
             <tr>
                 <td>{{.ID}}</td>
-                <td>{{.Name}}</td>
+                <td>
+                    <input class="cat-sort-input" type="number" name="sort_{{.ID}}" value="{{.SortOrder}}" title="数字越小越靠前">
+                </td>
+                <td>
+                    <input class="cat-name-input" type="text" name="name_{{.ID}}" value="{{.Name}}" required maxlength="30">
+                </td>
             </tr>
             {{end}}
             </tbody>
         </table>
+        <div class="form-actions">
+            <button type="submit" class="btn-primary">保存修改</button>
+        </div>
+        </form>
         {{else}}
         <p class="empty">还没有分类，先添加一个吧。</p>
         {{end}}

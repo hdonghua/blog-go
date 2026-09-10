@@ -66,9 +66,11 @@ func (s *Server) Router() *gin.Engine {
 		admin.POST("/edit/:id", s.postUpdate)
 		admin.GET("/categories", s.categoriesPage)
 		admin.POST("/categories", s.categoryCreate)
+		admin.POST("/categories/update", s.categoryUpdate)
 		admin.GET("/settings", s.settingsPage)
 		admin.POST("/settings", s.settingsSave)
 		admin.POST("/settings/favicon", s.settingsFaviconUpload)
+		admin.POST("/settings/password", s.settingsPassword)
 	}
 
 	r.NoRoute(func(c *gin.Context) {

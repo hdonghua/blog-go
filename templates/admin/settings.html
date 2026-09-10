@@ -10,10 +10,11 @@
 <body>
 {{template "admin_nav" .}}
 <main class="container">
+    {{if eq .Saved "1"}}<div class="ok">设置已保存</div>{{end}}
+    {{if eq .Saved "pwd"}}<div class="ok">密码已修改</div>{{end}}
+    {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
     <section class="panel">
         <h2>站点设置</h2>
-        {{if .Saved}}<div class="ok">设置已保存</div>{{end}}
-        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
         <form method="post" action="/admin/settings">
             <div class="form-row">
                 <label class="field-label">网站标题</label>
@@ -47,6 +48,28 @@
             </div>
             <p class="field-tip">建议使用 32×32 或 64×64 的 ico / png 图片，保存后刷新前台页面生效</p>
         </div>
+    </section>
+
+    <section class="panel">
+        <h2>修改密码</h2>
+        <form method="post" action="/admin/settings/password">
+            <div class="form-row">
+                <label class="field-label">当前密码</label>
+                <input type="password" name="current_password" required autocomplete="current-password">
+            </div>
+            <div class="form-row">
+                <label class="field-label">新密码</label>
+                <input type="password" name="new_password" required minlength="6" autocomplete="new-password">
+            </div>
+            <div class="form-row">
+                <label class="field-label">确认新密码</label>
+                <input type="password" name="confirm_password" required minlength="6" autocomplete="new-password">
+            </div>
+            <div class="form-row form-actions">
+                <button type="submit" class="btn-primary">修改密码</button>
+            </div>
+        </form>
+        <p class="field-tip">新密码至少 6 位，修改后当前登录仍然有效</p>
     </section>
 </main>
 </body>

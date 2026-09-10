@@ -264,6 +264,7 @@ func (s *Server) categoriesPage(c *gin.Context) {
 		"Favicon":   favicon,
 		"Cats":      cats,
 		"Error":     c.Query("err"),
+		"Saved":     c.Query("saved"),
 	})
 }
 
@@ -273,11 +274,75 @@ func (s *Server) categoryCreate(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/admin/categories?err=empty")
 		return
 	}
-	if _, err := s.store.CreateCategory(name); err != nil {
+	if len([]rune(name)) > 30 {
+		c.Redirect(http.StatusFound, "/admin/categories?err=long")
+		return
+	}
+	sortOrder, ok := parseSortOrder(c.PostForm("sort_order"))
+	if !ok {
+		c.Redirect(http.StatusFound, "/admin/categories?err=sort")
+		return
+	}
+	if _, err := s.store.CreateCategory(name, sortOrder); err != nil {
 		c.Redirect(http.StatusFound, "/admin/categories?err=duplicate")
 		return
 	}
 	c.Redirect(http.StatusFound, "/admin/categories")
+}
+
+// categoryUpdate 批量保存分类名称与排序号。
+func (s *Server) categoryUpdate(c *gin.Context) {
+	cats, err := s.store.Categories()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "读取分类失败: %v", err)
+		return
+	}
+	items := make([]store.Category, 0, len(cats))
+	seen := map[string]struct{}{}
+	for _, cat := range cats {
+		idStr := strconv.FormatInt(cat.ID, 10)
+		name := strings.TrimSpace(c.PostForm("name_" + idStr))
+		if name == "" {
+			c.Redirect(http.StatusFound, "/admin/categories?err=empty")
+			return
+		}
+		if len([]rune(name)) > 30 {
+			c.Redirect(http.StatusFound, "/admin/categories?err=long")
+			return
+		}
+		if _, ok := seen[name]; ok {
+			c.Redirect(http.StatusFound, "/admin/categories?err=duplicate")
+			return
+		}
+		seen[name] = struct{}{}
+		sortOrder, ok := parseSortOrder(c.PostForm("sort_" + idStr))
+		if !ok {
+			c.Redirect(http.StatusFound, "/admin/categories?err=sort")
+			return
+		}
+		items = append(items, store.Category{ID: cat.ID, Name: name, SortOrder: sortOrder})
+	}
+	if err := s.store.UpdateCategories(items); err == store.ErrExists {
+		c.Redirect(http.StatusFound, "/admin/categories?err=duplicate")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "保存分类失败: %v", err)
+		return
+	}
+	c.Redirect(http.StatusFound, "/admin/categories?saved=1")
+}
+
+// parseSortOrder 解析排序号，空值视为 0。
+func parseSortOrder(s string) (int, bool) {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, true
+	}
+	n, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
 }
 
 // settingsPage 站点设置：网站标题、备案号。
@@ -345,4 +410,65 @@ func (s *Server) settingsFaviconUpload(c *gin.Context) {
 		return
 	}
 	c.Redirect(http.StatusFound, "/admin/settings?saved=1")
+}
+
+const minPasswordLen = 6
+
+// settingsPassword 修改当前登录用户密码。
+func (s *Server) settingsPassword(c *gin.Context) {
+	uid, ok := s.currentUser(c)
+	if !ok {
+		c.Redirect(http.StatusFound, "/admin/login")
+		return
+	}
+	current := c.PostForm("current_password")
+	next := c.PostForm("new_password")
+	confirm := c.PostForm("confirm_password")
+	render := func(errMsg string) {
+		title, icp, favicon := s.siteInfo()
+		c.HTML(http.StatusBadRequest, "settings.html", gin.H{
+			"SiteTitle":       title,
+			"Favicon":         favicon,
+			"SettingTitle":    title,
+			"SettingICP":      icp,
+			"SettingFavicon":  favicon,
+			"SettingPageSize": s.pageSize(),
+			"Error":           errMsg,
+		})
+	}
+	if current == "" || next == "" || confirm == "" {
+		render("请填写当前密码和新密码")
+		return
+	}
+	if next != confirm {
+		render("两次输入的新密码不一致")
+		return
+	}
+	if len(next) < minPasswordLen {
+		render("新密码至少 6 位")
+		return
+	}
+	if next == current {
+		render("新密码不能与当前密码相同")
+		return
+	}
+	u, err := s.store.GetUserByID(uid)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "读取用户失败: %v", err)
+		return
+	}
+	if !auth.CheckPassword(u.PasswordHash, current) {
+		render("当前密码不正确")
+		return
+	}
+	hash, err := auth.HashPassword(next)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "加密密码失败: %v", err)
+		return
+	}
+	if err := s.store.UpdateUserPassword(uid, hash); err != nil {
+		c.String(http.StatusInternalServerError, "保存密码失败: %v", err)
+		return
+	}
+	c.Redirect(http.StatusFound, "/admin/settings?saved=pwd")
 }

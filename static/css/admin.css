@@ -288,7 +288,7 @@ td.row-actions a { margin-right: 8px; }
     gap: 12px;
     flex-wrap: wrap;
 }
-.form-row input[type="text"], .form-row input[type="number"], .form-row select,
+.form-row input[type="text"], .form-row input[type="number"], .form-row input[type="password"], .form-row select,
 .form-inline input[type="date"], .form-inline select {
     width: 100%;
     max-width: 480px;
@@ -321,9 +321,9 @@ td.row-actions a { margin-right: 8px; }
 .cat-form {
     display: flex;
     gap: 12px;
-    max-width: 480px;
+    max-width: 560px;
 }
-.cat-form input {
+.cat-form input[type="text"] {
     flex: 1;
     min-width: 0;
     padding: 10px 14px;
@@ -332,7 +332,41 @@ td.row-actions a { margin-right: 8px; }
     outline: none;
     transition: border-color .15s, box-shadow .15s;
 }
+.cat-form input[type="number"] {
+    flex: 0 0 96px;
+    width: 96px;
+    padding: 10px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
 .cat-form input:focus {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(0, 112, 243, .15);
+}
+.cat-sort-input {
+    width: 80px;
+    padding: 6px 8px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.cat-sort-input:focus {
+    border-color: var(--text);
+    box-shadow: 0 0 0 3px rgba(0, 112, 243, .15);
+}
+.cat-name-input {
+    width: 100%;
+    max-width: 280px;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    outline: none;
+    transition: border-color .15s, box-shadow .15s;
+}
+.cat-name-input:focus {
     border-color: var(--text);
     box-shadow: 0 0 0 3px rgba(0, 112, 243, .15);
 }

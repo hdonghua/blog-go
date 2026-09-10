@@ -67,6 +67,7 @@ func (s *Store) migrate() error {
 		`CREATE TABLE IF NOT EXISTS categories (
 			id         INTEGER PRIMARY KEY AUTOINCREMENT,
 			name       TEXT NOT NULL UNIQUE,
+			sort_order INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);`,
 		`CREATE TABLE IF NOT EXISTS posts (
@@ -90,15 +91,27 @@ func (s *Store) migrate() error {
 			return fmt.Errorf("建表失败: %w\n%s", err, stmt)
 		}
 	}
-	// 老库升级：为 posts 表补充 status 列
-	var hasStatus int
-	if err := s.DB.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('posts') WHERE name = 'status'`).Scan(&hasStatus); err != nil {
-		return fmt.Errorf("检查 posts 表结构失败: %w", err)
+	if err := s.ensureColumn("posts", "status", `ALTER TABLE posts ADD COLUMN status INTEGER NOT NULL DEFAULT 1`); err != nil {
+		return err
 	}
-	if hasStatus == 0 {
-		if _, err := s.DB.Exec(`ALTER TABLE posts ADD COLUMN status INTEGER NOT NULL DEFAULT 1`); err != nil {
-			return fmt.Errorf("升级 posts 表失败: %w", err)
-		}
+	if err := s.ensureColumn("categories", "sort_order", `ALTER TABLE categories ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0`); err != nil {
+		return err
+	}
+	return nil
+}
+
+// ensureColumn 老库升级：表缺少指定列时执行 ALTER。
+func (s *Store) ensureColumn(table, column, alterSQL string) error {
+	var n int
+	q := fmt.Sprintf(`SELECT COUNT(*) FROM pragma_table_info('%s') WHERE name = '%s'`, table, column)
+	if err := s.DB.QueryRow(q).Scan(&n); err != nil {
+		return fmt.Errorf("检查 %s 表结构失败: %w", table, err)
+	}
+	if n > 0 {
+		return nil
+	}
+	if _, err := s.DB.Exec(alterSQL); err != nil {
+		return fmt.Errorf("升级 %s 表失败: %w", table, err)
 	}
 	return nil
 }
@@ -165,11 +178,9 @@ func (s *Store) seedUser(username, password string) error {
 	return nil
 }
 
-// GetUserByUsername 后台登录按用户名读取用户表。
-func (s *Store) GetUserByUsername(username string) (*User, error) {
+func scanUser(row *sql.Row) (*User, error) {
 	u := &User{}
-	err := s.DB.QueryRow(`SELECT id, username, password_hash, created_at FROM users WHERE username = ?`, username).
-		Scan(&u.ID, &u.Username, &u.PasswordHash, &u.CreatedAt)
+	err := row.Scan(&u.ID, &u.Username, &u.PasswordHash, &u.CreatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -179,8 +190,34 @@ func (s *Store) GetUserByUsername(username string) (*User, error) {
 	return u, nil
 }
 
+// GetUserByUsername 后台登录按用户名读取用户表。
+func (s *Store) GetUserByUsername(username string) (*User, error) {
+	return scanUser(s.DB.QueryRow(`SELECT id, username, password_hash, created_at FROM users WHERE username = ?`, username))
+}
+
+// GetUserByID 按 ID 读取用户（修改密码时校验当前密码）。
+func (s *Store) GetUserByID(id int64) (*User, error) {
+	return scanUser(s.DB.QueryRow(`SELECT id, username, password_hash, created_at FROM users WHERE id = ?`, id))
+}
+
+// UpdateUserPassword 更新用户密码哈希。
+func (s *Store) UpdateUserPassword(id int64, passwordHash string) error {
+	res, err := s.DB.Exec(`UPDATE users SET password_hash = ? WHERE id = ?`, passwordHash, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func (s *Store) Categories() ([]Category, error) {
-	rows, err := s.DB.Query(`SELECT id, name FROM categories ORDER BY name`)
+	rows, err := s.DB.Query(`SELECT id, name, sort_order FROM categories ORDER BY sort_order ASC, id ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +225,7 @@ func (s *Store) Categories() ([]Category, error) {
 	var list []Category
 	for rows.Next() {
 		var c Category
-		if err := rows.Scan(&c.ID, &c.Name); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.SortOrder); err != nil {
 			return nil, err
 		}
 		list = append(list, c)
@@ -196,13 +233,13 @@ func (s *Store) Categories() ([]Category, error) {
 	return list, rows.Err()
 }
 
-// CategoriesWithCount 返回全部分类及各自已发布文章数量，按名称 A-Z 排序，“其它”固定在最后。
+// CategoriesWithCount 返回全部分类及各自已发布文章数量，按排序号升序。
 func (s *Store) CategoriesWithCount() ([]CategoryCount, error) {
-	rows, err := s.DB.Query(`SELECT c.id, c.name, COUNT(p.id)
+	rows, err := s.DB.Query(`SELECT c.id, c.name, c.sort_order, COUNT(p.id)
 		FROM categories c
 		LEFT JOIN posts p ON p.category_id = c.id AND p.status = 1
-		GROUP BY c.id, c.name
-		ORDER BY CASE WHEN c.name = '其它' THEN 1 ELSE 0 END, c.name`)
+		GROUP BY c.id, c.name, c.sort_order
+		ORDER BY c.sort_order ASC, c.id ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +247,7 @@ func (s *Store) CategoriesWithCount() ([]CategoryCount, error) {
 	var list []CategoryCount
 	for rows.Next() {
 		var c CategoryCount
-		if err := rows.Scan(&c.ID, &c.Name, &c.Count); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.SortOrder, &c.Count); err != nil {
 			return nil, err
 		}
 		list = append(list, c)
@@ -218,12 +255,35 @@ func (s *Store) CategoriesWithCount() ([]CategoryCount, error) {
 	return list, rows.Err()
 }
 
-func (s *Store) CreateCategory(name string) (int64, error) {
-	res, err := s.DB.Exec(`INSERT INTO categories (name, created_at) VALUES (?, ?)`, name, time.Now())
+func (s *Store) CreateCategory(name string, sortOrder int) (int64, error) {
+	res, err := s.DB.Exec(`INSERT INTO categories (name, sort_order, created_at) VALUES (?, ?, ?)`, name, sortOrder, time.Now())
 	if err != nil {
 		return 0, ErrExists
 	}
 	return res.LastInsertId()
+}
+
+// UpdateCategories 批量更新分类名称与排序号。
+func (s *Store) UpdateCategories(items []Category) error {
+	tx, err := s.DB.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.Prepare(`UPDATE categories SET name = ?, sort_order = ? WHERE id = ?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, it := range items {
+		if _, err := stmt.Exec(it.Name, it.SortOrder, it.ID); err != nil {
+			if strings.Contains(err.Error(), "UNIQUE constraint failed") {
+				return ErrExists
+			}
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // GetOrCreateCategoryByName 按名称查找分类，不存在则自动创建。
@@ -236,7 +296,7 @@ func (s *Store) GetOrCreateCategoryByName(name string) (int64, error) {
 	if !errors.Is(err, sql.ErrNoRows) {
 		return 0, err
 	}
-	res, err := s.DB.Exec(`INSERT INTO categories (name, created_at) VALUES (?, ?)`, name, time.Now())
+	res, err := s.DB.Exec(`INSERT INTO categories (name, sort_order, created_at) VALUES (?, ?, ?)`, name, 0, time.Now())
 	if err != nil {
 		return 0, err
 	}

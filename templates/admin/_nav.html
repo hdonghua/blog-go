@@ -1,0 +1,17 @@
+{{define "admin_nav"}}
+<header class="topbar">
+    <div class="topbar-inner">
+        <span class="brand">{{.SiteTitle}} · 管理后台</span>
+        <nav>
+            <a href="/admin">概览</a>
+            <a href="/admin/posts/new">发布文章</a>
+            <a href="/admin/categories">分类管理</a>
+            <a href="/admin/settings">站点设置</a>
+            <a href="/" target="_blank">查看站点</a>
+            <form action="/admin/logout" method="post" class="inline">
+                <button type="submit" class="linklike">退出登录</button>
+            </form>
+        </nav>
+    </div>
+</header>
+{{end}}

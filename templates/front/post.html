@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Post.Title}} - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/site.css">
+    <link rel="stylesheet" href="/static/highlightjs/atom-one-dark.min.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <div class="card-head post-head">
+            <a class="back" href="/">&larr; 返回列表</a>
+            <h1 class="post-title">{{.Post.Title}}</h1>
+            <div class="item-meta">
+                {{if .Post.CategoryName}}<span class="badge">{{.Post.CategoryName}}</span>{{end}}
+                <time>{{.Post.CreatedAt | fmttime}}</time>
+            </div>
+        </div>
+        <div class="post-content">
+            {{.ContentHTML}}
+        </div>
+    </div>
+</div>
+<footer class="site-footer">
+    <div class="footer-divider"></div>
+    <p>Powered by gin + sqlite{{if .ICP}} · <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">{{.ICP}}</a>{{end}}</p>
+</footer>
+<script src="/static/highlightjs/highlight.min.js"></script>
+<script>
+    hljs.registerAliases(["golang"], { languageName: "go" });
+    document.querySelectorAll(".post-content pre code").forEach(function (block) {
+        hljs.highlightElement(block);
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>概览 - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+{{template "admin_nav" .}}
+<main class="container">
+    <div class="stats">
+        <div class="stat-card">
+            <div class="num">{{.Total}}</div>
+            <div class="label">文章</div>
+        </div>
+        <div class="stat-card">
+            <div class="num">{{len .Cats}}</div>
+            <div class="label">分类</div>
+        </div>
+        <div class="stat-card action">
+            <a href="/admin/posts/new">＋ 发布新文章</a>
+        </div>
+        <div class="stat-card action">
+            <a href="/admin/categories">＋ 添加分类</a>
+        </div>
+    </div>
+
+    <section class="panel">
+        <h2>最近发布的文章</h2>
+        {{if .Posts}}
+        <table>
+            <thead>
+            <tr><th>标题</th><th>分类</th><th>状态</th><th>发布时间</th><th></th></tr>
+            </thead>
+            <tbody>
+            {{range .Posts}}
+            <tr>
+                <td>{{.Title}}</td>
+                <td>{{if .CategoryName}}{{.CategoryName}}{{else}}-{{end}}</td>
+                <td>{{if eq .Status 1}}已发布{{else}}<span class="draft-tag">草稿</span>{{end}}</td>
+                <td>{{.CreatedAt | fmttime}}</td>
+                <td class="row-actions">
+                    {{if eq .Status 1}}<a href="/post/{{.ID}}" target="_blank">查看</a>{{end}}
+                    <a href="/admin/edit/{{.ID}}">编辑</a>
+                </td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p class="empty">还没有文章，点击上方「发布新文章」开始写作。</p>
+        {{end}}
+    </section>
+</main>
+</body>
+</html>

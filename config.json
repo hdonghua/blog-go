@@ -1,0 +1,22 @@
+{
+  "server": {
+    "addr": ":8080"
+  },
+  "database": {
+    "path": "data/blog.db"
+  },
+  "upload": {
+    "dir": "data/uploads"
+  },
+  "auth": {
+    "secret": "please-change-this-secret",
+    "cookie_name": "blog_session",
+    "session_hours": 72,
+    "seed_username": "admin",
+    "seed_password": "admin123"
+  },
+  "site": {
+    "title": "我的博客",
+    "page_size": 20
+  }
+}

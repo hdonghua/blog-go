@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>分类管理 - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+{{template "admin_nav" .}}
+<main class="container">
+    <section class="panel">
+        <h2>添加分类</h2>
+        {{if .Error}}
+            {{if eq .Error "duplicate"}}<div class="alert">该分类已存在</div>
+            {{else if eq .Error "empty"}}<div class="alert">分类名不能为空</div>{{end}}
+        {{end}}
+        <form method="post" action="/admin/categories" class="cat-form">
+            <input type="text" name="name" placeholder="分类名称，如：技术 / 生活" required maxlength="30">
+            <button type="submit" class="btn-primary">添加</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>全部分类（{{len .Cats}}）</h2>
+        {{if .Cats}}
+        <table>
+            <thead>
+            <tr><th>ID</th><th>名称</th></tr>
+            </thead>
+            <tbody>
+            {{range .Cats}}
+            <tr>
+                <td>{{.ID}}</td>
+                <td>{{.Name}}</td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+        {{else}}
+        <p class="empty">还没有分类，先添加一个吧。</p>
+        {{end}}
+    </section>
+</main>
+</body>
+</html>

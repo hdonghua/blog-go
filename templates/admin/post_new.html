@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{if .EditID}}编辑文章{{else}}发布文章{{end}} - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/admin.css">
+    <link rel="stylesheet" href="/static/editormd/css/editormd.min.css">
+</head>
+<body>
+{{template "admin_nav" .}}
+<main class="container">
+    <section class="panel">
+        <h2>{{if .EditID}}编辑文章{{else}}发布文章{{end}}</h2>
+        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+        <form method="post" action="{{if .EditID}}/admin/edit/{{.EditID}}{{else}}/admin/posts{{end}}" onsubmit="return syncEditor()">
+            <div class="form-row">
+                <input type="text" name="title" value="{{.Title}}" placeholder="请输入文章标题" required>
+            </div>
+            <div class="form-row">
+                <div class="form-inline">
+                    <select name="category_id">
+                        <option value="0">未分类</option>
+                        {{$cid := .CategoryID}}
+                        {{range .Cats}}
+                        <option value="{{.ID}}" {{if eq .ID $cid}}selected{{end}}>{{.Name}}</option>
+                        {{end}}
+                    </select>
+                    <input type="date" name="published_at" value="{{.PublishedAt}}" title="发布日期（可选，默认今天）">
+                    <select name="status">
+                        {{$st := .Status}}
+                        <option value="1" {{if eq $st 1}}selected{{end}}>正式发布</option>
+                        <option value="0" {{if eq $st 0}}selected{{end}}>草稿</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div id="editor-md">
+                    <textarea style="display:none;">{{.Content}}</textarea>
+                </div>
+                <input type="hidden" name="content" id="content-field" value="">
+            </div>
+            <div class="form-row form-actions">
+                <button type="submit" class="btn-primary">{{if .EditID}}保存修改{{else}}发布文章{{end}}</button>
+            </div>
+        </form>
+    </section>
+</main>
+<script src="/static/editormd/jquery.min.js"></script>
+<script src="/static/editormd/editormd.min.js"></script>
+<script>
+    var editor;
+    $(function () {
+        editor = editormd("editor-md", {
+            width: "100%",
+            height: 620,
+            path: "/static/editormd/lib/",
+            placeholder: "使用 Markdown 写作，支持工具栏上传图片…",
+            codeFold: true,
+            emoji: true,
+            taskList: true,
+            tocm: true,
+            imageUpload: true,
+            imageFormats: ["jpg", "jpeg", "gif", "png", "webp"],
+            imageUploadURL: "/api/upload"
+        });
+    });
+    // 提交前把 editor.md 的 markdown 原文同步到隐藏域，后端只存 md 原文
+    function syncEditor() {
+        if (editor) {
+            document.getElementById("content-field").value = editor.getMarkdown();
+        }
+        return true;
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>404 - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <div class="notfound">
+            <div class="code">404</div>
+            <p>页面不存在或已被删除</p>
+            <a class="btn" href="/">返回首页</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <div class="card-head">
+            <div class="head-row">
+                <h1 class="site-title"><a href="/">{{.SiteTitle}}</a></h1>
+            </div>
+            <div class="toolbar">
+                <nav class="cats">
+                    {{range .Cats}}
+                    <a class="cat-link {{if .Active}}active{{end}}" href="/?cat={{.ID}}">{{.Name}}({{.Count}})</a>
+                    {{end}}
+                </nav>
+                <form class="search" action="/" method="get">
+                    {{if .CurCat}}<input type="hidden" name="cat" value="{{.CurCat}}">{{end}}
+                    <input type="search" name="q" value="{{.Query}}" placeholder="搜索…" autocomplete="off">
+                    <button type="submit" class="search-btn" aria-label="搜索">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+        <div class="list">
+            {{if .Posts}}
+                {{range .Posts}}
+                <article class="item">
+                    <a class="item-title" href="/post/{{.ID}}">{{.Title}}</a>
+                    <div class="item-meta">
+                        {{if .CategoryName}}<span class="badge">{{.CategoryName}}</span>{{end}}
+                        <time>{{.CreatedAt | fmttime}}</time>
+                    </div>
+                </article>
+                {{end}}
+            {{else}}
+                <div class="empty">
+                    {{if .Query}}没有找到与「{{.Query}}」相关的文章{{else if .CurCat}}该分类下暂无文章{{else}}还没有文章，去后台发布第一篇吧{{end}}
+                </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{if gt .TotalPages 1}}
+<nav class="pager">
+    {{if gt .Page 1}}<a class="page-btn" href="{{.PrevURL}}" aria-label="上一页">&lsaquo;</a>
+    {{else}}<span class="page-btn disabled">&lsaquo;</span>{{end}}
+    {{range .PageNums}}
+        {{if .Ellipsis}}<span class="page-btn ellipsis">&hellip;</span>
+        {{else if .Current}}<span class="page-btn current">{{.Num}}</span>
+        {{else}}<a class="page-btn" href="{{.URL}}">{{.Num}}</a>{{end}}
+    {{end}}
+    {{if lt .Page .TotalPages}}<a class="page-btn" href="{{.NextURL}}" aria-label="下一页">&rsaquo;</a>
+    {{else}}<span class="page-btn disabled">&rsaquo;</span>{{end}}
+</nav>
+{{end}}
+<footer class="site-footer">
+    <div class="footer-divider"></div>
+    <p>共 {{.Total}} 篇文章 · Powered by gin + sqlite{{if .ICP}} · <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">{{.ICP}}</a>{{end}}</p>
+</footer>
+</body>
+</html>

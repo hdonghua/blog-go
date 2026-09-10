@@ -1,0 +1,23 @@
+# 运行数据：sqlite 数据库与上传的图片文件（含上传目录 data/uploads）
+data/
+
+# 编译产物
+blog-go.exe
+*.exe
+
+# 本地 Go 缓存 / 测试目录
+.gocache/
+.gopath/
+.testrun/
+
+# 临时文件与日志
+tmp/
+*.log
+*.tmp
+cookies.txt
+
+# 编辑器 / 操作系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

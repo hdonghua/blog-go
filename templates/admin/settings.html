@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>站点设置 - {{.SiteTitle}}</title>
+    {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+{{template "admin_nav" .}}
+<main class="container">
+    <section class="panel">
+        <h2>站点设置</h2>
+        {{if .Saved}}<div class="ok">设置已保存</div>{{end}}
+        {{if .Error}}<div class="alert">{{.Error}}</div>{{end}}
+        <form method="post" action="/admin/settings">
+            <div class="form-row">
+                <label class="field-label">网站标题</label>
+                <input type="text" name="site_title" value="{{.SettingTitle}}" required maxlength="50">
+            </div>
+            <div class="form-row">
+                <label class="field-label">网站底部备案号</label>
+                <input type="text" name="icp" value="{{.SettingICP}}" placeholder="如：京ICP备12345678号-1，留空则不显示" maxlength="50">
+            </div>
+            <div class="form-row">
+                <label class="field-label">前台分页条数</label>
+                <input type="number" name="page_size" value="{{.SettingPageSize}}" min="1" max="100" required>
+            </div>
+            <div class="form-row form-actions">
+                <button type="submit" class="btn-primary">保存设置</button>
+            </div>
+        </form>
+        <div class="divider"></div>
+        <div class="form-row">
+            <label class="field-label">网站图标（浏览器标签页图标）</label>
+            <div class="favicon-row">
+                {{if .SettingFavicon}}
+                    <img src="{{.SettingFavicon}}" class="favicon-preview" alt="当前网站图标">
+                {{else}}
+                    <span class="favicon-empty">未设置</span>
+                {{end}}
+                <form method="post" action="/admin/settings/favicon" enctype="multipart/form-data" class="favicon-form">
+                    <input type="file" name="favicon" accept=".ico,.png,.jpg,.jpeg,.gif,.webp" required>
+                    <button type="submit" class="btn-primary">上传图标</button>
+                </form>
+            </div>
+            <p class="field-tip">建议使用 32×32 或 64×64 的 ico / png 图片，保存后刷新前台页面生效</p>
+        </div>
+    </section>
+</main>
+</body>
+</html>

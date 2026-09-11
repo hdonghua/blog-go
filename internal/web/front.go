@@ -1,6 +1,8 @@
 package web
 
 import (
+	"bytes"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -8,9 +10,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
 
 	"blog-go/internal/store"
 )
@@ -19,6 +23,60 @@ var md = goldmark.New(
 	goldmark.WithExtensions(extension.Table, extension.Linkify, extension.TaskList, extension.Strikethrough),
 	goldmark.WithRendererOptions(html.WithUnsafe()),
 )
+
+// TocItem 文章目录条目。
+type TocItem struct {
+	Level int
+	ID    string
+	Title string
+}
+
+// renderMarkdown 渲染 markdown 为 HTML，同时提取 h1-h3 标题生成目录。
+// 标题节点会被写入 id 属性（h-1、h-2…），供目录锚点定位。
+func renderMarkdown(content string) (template.HTML, []TocItem, error) {
+	source := []byte(content)
+	doc := md.Parser().Parse(text.NewReader(source))
+	var toc []TocItem
+	i := 0
+	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+		h, ok := n.(*ast.Heading)
+		if !ok || h.Level < 1 || h.Level > 3 {
+			return ast.WalkContinue, nil
+		}
+		var buf bytes.Buffer
+		collectHeadingText(h, source, &buf)
+		if buf.Len() == 0 {
+			return ast.WalkContinue, nil // 空标题跳过
+		}
+		i++
+		id := fmt.Sprintf("h-%d", i)
+		h.SetAttributeString("id", []byte(id))
+		toc = append(toc, TocItem{Level: h.Level, ID: id, Title: buf.String()})
+		return ast.WalkContinue, nil
+	})
+	if err != nil {
+		return "", nil, err
+	}
+	var htmlBuf bytes.Buffer
+	if err := md.Renderer().Render(&htmlBuf, source, doc); err != nil {
+		return "", nil, err
+	}
+	return template.HTML(htmlBuf.String()), toc, nil
+}
+
+// collectHeadingText 递归收集标题节点的纯文本。
+func collectHeadingText(n ast.Node, source []byte, buf *bytes.Buffer) {
+	for c := n.FirstChild(); c != nil; c = c.NextSibling() {
+		if t, ok := c.(*ast.Text); ok {
+			buf.Write(t.Segment.Value(source))
+		} else {
+			collectHeadingText(c, source, buf)
+		}
+	}
+}
 
 // pageItem 分页条目，Ellipsis 为 true 时显示省略号。
 type pageItem struct {
@@ -154,8 +212,8 @@ func (s *Server) frontPost(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "读取文章失败: %v", err)
 		return
 	}
-	var buf strings.Builder
-	if err := md.Convert([]byte(post.Content), &buf); err != nil {
+	contentHTML, toc, err := renderMarkdown(post.Content)
+	if err != nil {
 		c.String(http.StatusInternalServerError, "渲染文章失败: %v", err)
 		return
 	}
@@ -164,6 +222,7 @@ func (s *Server) frontPost(c *gin.Context) {
 		"ICP":         icp,
 		"Favicon":     favicon,
 		"Post":        post,
-		"ContentHTML": template.HTML(buf.String()),
+		"ContentHTML": contentHTML,
+		"TOC":         toc,
 	})
 }

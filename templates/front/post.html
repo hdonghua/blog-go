@@ -9,6 +9,14 @@
     <link rel="stylesheet" href="/static/highlightjs/atom-one-dark.min.css">
 </head>
 <body>
+{{if .TOC}}
+<aside class="toc">
+    <div class="toc-title">目录</div>
+    {{range .TOC}}
+    <a href="#{{.ID}}" class="toc-link toc-l{{.Level}}" title="{{.Title}}">{{.Title}}</a>
+    {{end}}
+</aside>
+{{end}}
 <div class="page">
     <div class="card">
         <div class="card-head post-head">

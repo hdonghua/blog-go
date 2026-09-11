@@ -354,12 +354,12 @@ func (s *Store) CountPosts(query string, categoryID int64) (int, error) {
 	return n, err
 }
 
-// ListAdminPosts 后台文章列表（含草稿）。
-func (s *Store) ListAdminPosts(limit int) ([]Post, error) {
+// ListAdminPosts 后台文章列表（含草稿，分页）。
+func (s *Store) ListAdminPosts(limit, offset int) ([]Post, error) {
 	rows, err := s.DB.Query(`SELECT p.id, p.title, p.category_id,
 		COALESCE(c.name, ''), p.status, p.created_at
 		FROM posts p LEFT JOIN categories c ON c.id = p.category_id
-		ORDER BY p.created_at DESC, p.id DESC LIMIT ?`, limit)
+		ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
 		return nil, err
 	}

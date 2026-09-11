@@ -76,19 +76,38 @@ func (s *Server) currentUser(c *gin.Context) (int64, bool) {
 
 func (s *Server) adminHome(c *gin.Context) {
 	title, _, favicon := s.siteInfo()
-	posts, err := s.store.ListAdminPosts(10)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	const adminPageSize = 10
+	total, err := s.store.CountAdminPosts()
+	if err != nil {
+		c.String(http.StatusInternalServerError, "统计文章失败: %v", err)
+		return
+	}
+	totalPages := (total + adminPageSize - 1) / adminPageSize
+	if page > totalPages && totalPages > 0 {
+		page = totalPages
+	}
+	posts, err := s.store.ListAdminPosts(adminPageSize, (page-1)*adminPageSize)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "读取文章失败: %v", err)
 		return
 	}
-	total, _ := s.store.CountAdminPosts()
 	cats, _ := s.store.Categories()
+	adminURL := func(n int) string { return "/admin?page=" + strconv.Itoa(n) }
 	c.HTML(http.StatusOK, "admin_home.html", gin.H{
-		"SiteTitle": title,
-		"Favicon":   favicon,
-		"Posts":     posts,
-		"Total":     total,
-		"Cats":      cats,
+		"SiteTitle":  title,
+		"Favicon":    favicon,
+		"Posts":      posts,
+		"Total":      total,
+		"Cats":       cats,
+		"Page":       page,
+		"TotalPages": totalPages,
+		"PrevURL":    adminURL(page - 1),
+		"NextURL":    adminURL(page + 1),
+		"PageNums":   buildPageNums(page, totalPages, adminURL),
 	})
 }
 

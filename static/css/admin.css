@@ -268,6 +268,40 @@ td.cell-title {
 td a { color: var(--accent); text-decoration: none; }
 td.row-actions { white-space: nowrap; }
 td.row-actions a { margin-right: 8px; }
+
+/* 后台分页条 */
+.pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+}
+.page-btn {
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--panel);
+    font-size: 13px;
+    color: var(--text-2);
+    text-decoration: none;
+}
+a.page-btn:hover { border-color: var(--text); color: var(--text); }
+.page-btn.current {
+    background: #000;
+    border-color: #000;
+    color: #fff;
+    font-weight: 500;
+}
+.page-btn.disabled, .page-btn.ellipsis {
+    border-color: transparent;
+    color: var(--border-2);
+}
 .empty { color: var(--text-3); font-size: 14px; padding: 12px 0; }
 
 .draft-tag {

@@ -117,14 +117,14 @@ func pageURL(q string, cat int64, page int) string {
 	return "/"
 }
 
-// buildPageNums 构建页码条目，页数多时使用 1 … p-1 p p+1 … N 窗口。
-func buildPageNums(q string, cat int64, page, totalPages int) []pageItem {
+// buildPageNums 构建页码条目，页数多时使用 1 … p-1 p p+1 … N 窗口；urlFor 生成页码链接。
+func buildPageNums(page, totalPages int, urlFor func(n int) string) []pageItem {
 	if totalPages <= 1 {
 		return nil
 	}
 	var items []pageItem
 	add := func(n int) {
-		items = append(items, pageItem{Num: n, URL: pageURL(q, cat, n), Current: n == page})
+		items = append(items, pageItem{Num: n, URL: urlFor(n), Current: n == page})
 	}
 	if totalPages <= 9 {
 		for i := 1; i <= totalPages; i++ {
@@ -196,7 +196,7 @@ func (s *Server) frontIndex(c *gin.Context) {
 		"TotalPages": totalPages,
 		"PrevURL":    pageURL(q, cat, page-1),
 		"NextURL":    pageURL(q, cat, page+1),
-		"PageNums":   buildPageNums(q, cat, page, totalPages),
+		"PageNums":   buildPageNums(page, totalPages, func(n int) string { return pageURL(q, cat, n) }),
 	})
 }
 

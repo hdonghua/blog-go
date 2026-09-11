@@ -28,7 +28,7 @@
     </div>
 
     <section class="panel">
-        <h2>最近发布的文章</h2>
+        <h2>文章列表（共 {{.Total}} 篇）</h2>
         {{if .Posts}}
         <table>
             <thead>
@@ -51,6 +51,19 @@
         </table>
         {{else}}
         <p class="empty">还没有文章，点击上方「发布新文章」开始写作。</p>
+        {{end}}
+        {{if gt .TotalPages 1}}
+        <div class="pager">
+            {{if gt .Page 1}}<a class="page-btn" href="{{.PrevURL}}" aria-label="上一页">&lsaquo;</a>
+            {{else}}<span class="page-btn disabled">&lsaquo;</span>{{end}}
+            {{range .PageNums}}
+                {{if .Ellipsis}}<span class="page-btn ellipsis">&hellip;</span>
+                {{else if .Current}}<span class="page-btn current">{{.Num}}</span>
+                {{else}}<a class="page-btn" href="{{.URL}}">{{.Num}}</a>{{end}}
+            {{end}}
+            {{if lt .Page .TotalPages}}<a class="page-btn" href="{{.NextURL}}" aria-label="下一页">&rsaquo;</a>
+            {{else}}<span class="page-btn disabled">&rsaquo;</span>{{end}}
+        </div>
         {{end}}
     </section>
 </main>

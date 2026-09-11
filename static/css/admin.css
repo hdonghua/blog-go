@@ -258,6 +258,13 @@ th {
 }
 tr:last-child td { border-bottom: none; }
 td { color: var(--text-2); }
+/* 标题超长省略，悬停显示完整标题 */
+td.cell-title {
+    max-width: 380px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 td a { color: var(--accent); text-decoration: none; }
 td.row-actions { white-space: nowrap; }
 td.row-actions a { margin-right: 8px; }

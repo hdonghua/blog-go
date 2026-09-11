@@ -37,7 +37,7 @@
             <tbody>
             {{range .Posts}}
             <tr>
-                <td>{{.Title}}</td>
+                <td class="cell-title" title="{{.Title}}">{{.Title}}</td>
                 <td>{{if .CategoryName}}{{.CategoryName}}{{else}}-{{end}}</td>
                 <td>{{if eq .Status 1}}已发布{{else}}<span class="draft-tag">草稿</span>{{end}}</td>
                 <td>{{.CreatedAt | fmttime}}</td>

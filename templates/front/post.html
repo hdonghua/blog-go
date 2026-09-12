@@ -7,6 +7,7 @@
     {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
     <link rel="stylesheet" href="/static/css/site.css">
     <link rel="stylesheet" href="/static/highlightjs/atom-one-dark.min.css">
+    <link rel="stylesheet" href="/static/viewerjs/viewer.min.css">
 </head>
 <body>
 {{if .TOC}}
@@ -41,6 +42,27 @@
     hljs.registerAliases(["golang"], { languageName: "go" });
     document.querySelectorAll(".post-content pre code").forEach(function (block) {
         hljs.highlightElement(block);
+    });
+</script>
+<script src="/static/editormd/jquery.min.js"></script>
+<script src="/static/viewerjs/viewer.min.js"></script>
+<script src="/static/viewerjs/jquery-viewer.min.js"></script>
+<script>
+    // 文章图片：Viewer.js 查看器（滚轮缩放 / 旋转 / 翻转 / 多图切换 / 全屏）
+    $('.post-content').viewer({
+        url: 'src',
+        title: function (img) { return img.alt || ''; },
+        toolbar: true,
+        navbar: true
+    });
+    // 文章视频：点击原生全屏放大
+    document.querySelectorAll('.post-content video').forEach(function (v) {
+        v.addEventListener('click', function (e) {
+            if (document.fullscreenElement === v) return;
+            e.preventDefault();
+            if (v.requestFullscreen) v.requestFullscreen();
+            else if (v.webkitRequestFullscreen) v.webkitRequestFullscreen();
+        });
     });
 </script>
 <button type="button" class="back-top" id="backTop" aria-label="回到顶部">

@@ -386,6 +386,30 @@ func (s *Store) CountAdminPosts() (int, error) {
 	return n, err
 }
 
+// SitemapPost 站点地图用文章信息。
+type SitemapPost struct {
+	ID        int64
+	UpdatedAt time.Time
+}
+
+// ListPostSitemap 已发布文章的 ID 与更新时间，用于生成 sitemap.xml。
+func (s *Store) ListPostSitemap() ([]SitemapPost, error) {
+	rows, err := s.DB.Query(`SELECT id, updated_at FROM posts WHERE status = 1 ORDER BY created_at DESC, id DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var list []SitemapPost
+	for rows.Next() {
+		var p SitemapPost
+		if err := rows.Scan(&p.ID, &p.UpdatedAt); err != nil {
+			return nil, err
+		}
+		list = append(list, p)
+	}
+	return list, rows.Err()
+}
+
 // GetPost 读取单篇文章（markdown 原文）。
 func (s *Store) GetPost(id int64) (*Post, error) {
 	p := &Post{}

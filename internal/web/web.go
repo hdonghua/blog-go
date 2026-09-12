@@ -48,6 +48,8 @@ func (s *Server) Router() *gin.Engine {
 	// 前台
 	r.GET("/", s.frontIndex)
 	r.GET("/post/:id", s.frontPost)
+	r.GET("/sitemap.xml", s.sitemapXML)
+	r.GET("/robots.txt", s.robotsTXT)
 
 	// 图片 API（上传需登录，展示公开）
 	r.POST("/api/upload", s.requireLogin, s.uploadImage)

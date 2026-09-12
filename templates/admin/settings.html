@@ -52,6 +52,25 @@
     </section>
 
     <section class="panel">
+        <h2>SEO 设置</h2>
+        <form method="post" action="/admin/settings/seo">
+            <div class="form-row">
+                <label class="field-label">网页 meta description</label>
+                <textarea name="seo_description" id="seoDescription" rows="3" maxlength="200" placeholder="站点/首页的搜索结果摘要，建议 80-160 字，留空使用默认">{{.SeoDescription}}</textarea>
+                <p class="field-tip char-count"><span id="seoDescCount">0</span> / 200</p>
+                <p class="field-tip">首页与文章页共享兜底描述；文章页会优先使用文章摘要</p>
+            </div>
+            <div class="form-row">
+                <label class="field-label">网页 meta keywords</label>
+                <input type="text" name="seo_keywords" value="{{.SeoKeywords}}" placeholder="逗号分隔，如：博客,技术,生活" maxlength="100">
+            </div>
+            <div class="form-row form-actions">
+                <button type="submit" class="btn-primary">保存 SEO 设置</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel">
         <h2>修改密码</h2>
         <form method="post" action="/admin/settings/password">
             <div class="form-row">
@@ -73,5 +92,17 @@
         <p class="field-tip">新密码至少 6 位，修改后当前登录仍然有效</p>
     </section>
 </main>
+<script>
+    (function () {
+        var ta = document.getElementById('seoDescription');
+        var counter = document.getElementById('seoDescCount');
+        function update() {
+            counter.textContent = ta.value.length;
+            counter.parentElement.classList.toggle('over', ta.value.length > 160);
+        }
+        ta.addEventListener('input', update);
+        update();
+    })();
+</script>
 </body>
 </html>

@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{.Post.Title}} - {{.SiteTitle}}</title>
     {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <meta name="description" content="{{.MetaDescription}}">
+    {{if .MetaKeywords}}<meta name="keywords" content="{{.MetaKeywords}}">{{end}}
+    <link rel="canonical" href="{{.CanonicalURL}}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{.Post.Title}}">
+    <meta property="og:description" content="{{.MetaDescription}}">
+    <meta property="og:url" content="{{.CanonicalURL}}">
     <link rel="stylesheet" href="/static/css/site.css">
     <link rel="stylesheet" href="/static/highlightjs/atom-one-dark.min.css">
     <link rel="stylesheet" href="/static/viewerjs/viewer.min.css">

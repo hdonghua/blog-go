@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{.SiteTitle}}</title>
     {{if .Favicon}}<link rel="icon" href="{{.Favicon}}">{{end}}
+    <meta name="description" content="{{.MetaDescription}}">
+    {{if .MetaKeywords}}<meta name="keywords" content="{{.MetaKeywords}}">{{end}}
+    <meta property="og:title" content="{{.SiteTitle}}">
+    <meta property="og:description" content="{{.MetaDescription}}">
+    <meta property="og:type" content="website">
     <link rel="stylesheet" href="/static/css/site.css">
 </head>
 <body>

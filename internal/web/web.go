@@ -34,6 +34,15 @@ func (s *Server) siteInfo() (title, icp, favicon string) {
 	return title, icp, favicon
 }
 
+// seoInfo 读取 SEO 设置（meta description / keywords）。
+func (s *Server) seoInfo() (description, keywords string) {
+	if m, err := s.store.GetSettings(); err == nil {
+		description = strings.TrimSpace(m["seo_description"])
+		keywords = strings.TrimSpace(m["seo_keywords"])
+	}
+	return
+}
+
 func (s *Server) Router() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger(), gin.Recovery())
@@ -72,6 +81,7 @@ func (s *Server) Router() *gin.Engine {
 		admin.POST("/categories/update", s.categoryUpdate)
 		admin.GET("/settings", s.settingsPage)
 		admin.POST("/settings", s.settingsSave)
+		admin.POST("/settings/seo", s.settingsSeoSave)
 		admin.POST("/settings/favicon", s.settingsFaviconUpload)
 		admin.POST("/settings/password", s.settingsPassword)
 	}

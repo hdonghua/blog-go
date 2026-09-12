@@ -413,6 +413,7 @@ func parseSortOrder(s string) (int, bool) {
 // settingsPage 站点设置：网站标题、备案号。
 func (s *Server) settingsPage(c *gin.Context) {
 	title, icp, favicon := s.siteInfo()
+	seoDesc, seoKeywords := s.seoInfo()
 	c.HTML(http.StatusOK, "settings.html", gin.H{
 		"SiteTitle":    title,
 		"Favicon":      favicon,
@@ -420,6 +421,8 @@ func (s *Server) settingsPage(c *gin.Context) {
 		"SettingICP":   icp,
 		"SettingFavicon": favicon,
 		"SettingPageSize": s.pageSize(),
+		"SeoDescription": seoDesc,
+		"SeoKeywords":  seoKeywords,
 		"Error":        c.Query("err"),
 		"Saved":        c.Query("saved"),
 	})
@@ -458,6 +461,25 @@ func (s *Server) settingsSave(c *gin.Context) {
 	}
 	if err := s.store.SetSetting("page_size", strconv.Itoa(pageSize)); err != nil {
 		c.String(http.StatusInternalServerError, "保存设置失败: %v", err)
+		return
+	}
+	c.Redirect(http.StatusFound, "/admin/settings?saved=1")
+}
+
+// settingsSeoSave 保存 SEO 设置（meta description / keywords）。
+func (s *Server) settingsSeoSave(c *gin.Context) {
+	desc := strings.TrimSpace(c.PostForm("seo_description"))
+	keywords := strings.TrimSpace(c.PostForm("seo_keywords"))
+	if len([]rune(desc)) > 200 {
+		c.Redirect(http.StatusFound, "/admin/settings?err="+url.QueryEscape("SEO 描述建议不超过 200 字"))
+		return
+	}
+	if err := s.store.SetSetting("seo_description", desc); err != nil {
+		c.String(http.StatusInternalServerError, "保存 SEO 设置失败: %v", err)
+		return
+	}
+	if err := s.store.SetSetting("seo_keywords", keywords); err != nil {
+		c.String(http.StatusInternalServerError, "保存 SEO 设置失败: %v", err)
 		return
 	}
 	c.Redirect(http.StatusFound, "/admin/settings?saved=1")

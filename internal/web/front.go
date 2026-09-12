@@ -158,6 +158,10 @@ func (s *Server) frontIndex(c *gin.Context) {
 	q := c.Query("q")
 	cat, _ := strconv.ParseInt(c.Query("cat"), 10, 64)
 	title, icp, favicon := s.siteInfo()
+	seoDesc, seoKeywords := s.seoInfo()
+	if seoDesc == "" {
+		seoDesc = title + " - 个人博客"
+	}
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if page < 1 {
@@ -186,6 +190,8 @@ func (s *Server) frontIndex(c *gin.Context) {
 		"SiteTitle":  title,
 		"ICP":        icp,
 		"Favicon":    favicon,
+		"MetaDescription": seoDesc,
+		"MetaKeywords":    seoKeywords,
 		"Query":      q,
 		"Posts":      posts,
 		"Total":      total,
@@ -202,6 +208,7 @@ func (s *Server) frontIndex(c *gin.Context) {
 
 func (s *Server) frontPost(c *gin.Context) {
 	title, icp, favicon := s.siteInfo()
+	_, seoKeywords := s.seoInfo()
 	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
 	post, err := s.store.GetPost(id)
 	if err == store.ErrNotFound {
@@ -217,6 +224,16 @@ func (s *Server) frontPost(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "渲染文章失败: %v", err)
 		return
 	}
+	// 文章页 SEO：描述用文章摘要，关键词 = 分类 + 站点关键词
+	metaDesc := post.Summary
+	if metaDesc == "" {
+		metaDesc = post.Title
+	}
+	if post.CategoryName != "" && seoKeywords != "" {
+		seoKeywords = post.CategoryName + ", " + seoKeywords
+	} else if post.CategoryName != "" {
+		seoKeywords = post.CategoryName
+	}
 	c.HTML(http.StatusOK, "post.html", gin.H{
 		"SiteTitle":   title,
 		"ICP":         icp,
@@ -224,5 +241,8 @@ func (s *Server) frontPost(c *gin.Context) {
 		"Post":        post,
 		"ContentHTML": contentHTML,
 		"TOC":         toc,
+		"MetaDescription": metaDesc,
+		"MetaKeywords":    seoKeywords,
+		"CanonicalURL":    baseURL(c) + "/post/" + strconv.FormatInt(id, 10),
 	})
 }

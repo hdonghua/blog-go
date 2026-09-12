@@ -179,6 +179,7 @@ input::placeholder { color: var(--text-3); }
     padding: 0;
 }
 .linklike:hover { color: #e5484d; }
+.linklike.danger { color: #e5484d; }
 
 /* 主区 */
 .container {

@@ -109,6 +109,8 @@ func (s *Server) adminHome(c *gin.Context) {
 		"PrevURL":    adminURL(page - 1),
 		"NextURL":    adminURL(page + 1),
 		"PageNums":   buildPageNums(page, totalPages, adminURL),
+		"Deleted":    c.Query("deleted"),
+		"Error":      c.Query("err"),
 	})
 }
 
@@ -315,6 +317,23 @@ func (s *Server) postExport(c *gin.Context) {
 	c.Header("Content-Disposition", disposition)
 	c.Header("Content-Type", "text/markdown; charset=utf-8")
 	c.String(http.StatusOK, post.Content)
+}
+
+// postDelete 物理删除文章。
+func (s *Server) postDelete(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err := s.store.DeletePost(id); err == store.ErrNotFound {
+		c.Redirect(http.StatusFound, "/admin?err=notfound")
+		return
+	} else if err != nil {
+		c.String(http.StatusInternalServerError, "删除文章失败: %v", err)
+		return
+	}
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	c.Redirect(http.StatusFound, "/admin?page="+page+"&deleted=1")
 }
 
 func (s *Server) categoriesPage(c *gin.Context) {

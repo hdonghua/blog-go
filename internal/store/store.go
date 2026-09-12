@@ -474,6 +474,22 @@ func (s *Store) UpdatePost(id int64, title string, categoryID int64, content, su
 	return nil
 }
 
+// DeletePost 物理删除文章。
+func (s *Store) DeletePost(id int64) error {
+	res, err := s.DB.Exec(`DELETE FROM posts WHERE id = ?`, id)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
 func escapeLike(s string) string {
 	r := ""
 	for _, c := range s {

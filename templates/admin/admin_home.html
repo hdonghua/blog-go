@@ -11,6 +11,8 @@
 <body>
 {{template "admin_nav" .}}
 <main class="container">
+    {{if eq .Deleted "1"}}<div class="ok">文章已删除</div>{{end}}
+    {{if eq .Error "notfound"}}<div class="alert">文章不存在或已被删除</div>{{end}}
     <div class="stats">
         <div class="stat-card">
             <div class="num">{{.Total}}</div>
@@ -46,6 +48,9 @@
                     {{if eq .Status 1}}<a href="/post/{{.ID}}" target="_blank">查看</a>{{end}}
                     <a href="/admin/edit/{{.ID}}">编辑</a>
                     <a href="/admin/export/{{.ID}}">导出</a>
+                    <form method="post" action="/admin/delete/{{.ID}}" class="inline" onsubmit="return confirm('确定物理删除这篇文章？删除后不可恢复！')">
+                        <button type="submit" class="linklike danger">删除</button>
+                    </form>
                 </td>
             </tr>
             {{end}}

@@ -125,6 +125,7 @@ func (s *Server) postNewPage(c *gin.Context) {
 		"Error":     "",
 		"Title":     "",
 		"Content":   "",
+		"Summary":   "",
 		"CategoryID": int64(0),
 		"PublishedAt": "",
 		"Status": store.StatusPublished,
@@ -136,6 +137,7 @@ func (s *Server) postNewPage(c *gin.Context) {
 type postForm struct {
 	Title         string
 	Content       string
+	Summary       string
 	CategoryID    int64
 	PublishedAt   time.Time
 	PublishedAtStr string
@@ -147,6 +149,7 @@ func (s *Server) parsePostForm(c *gin.Context) (postForm, error) {
 	f := postForm{Status: store.StatusPublished}
 	f.Title = strings.TrimSpace(c.PostForm("title"))
 	f.Content = c.PostForm("content") // editor.md 的 markdown 原文
+	f.Summary = strings.TrimSpace(c.PostForm("summary"))
 	f.CategoryID, _ = strconv.ParseInt(c.PostForm("category_id"), 10, 64)
 	// 选择“未分类”时自动归入“其它”分类，避免外键约束错误
 	if f.CategoryID == 0 {
@@ -170,6 +173,7 @@ func (s *Server) parsePostForm(c *gin.Context) (postForm, error) {
 	return f, nil
 }
 
+
 // renderPostForm 渲染发布/编辑表单页（校验失败时回显）。
 func (s *Server) renderPostForm(c *gin.Context, errMsg string, editID int64, f postForm) {
 	title, _, favicon := s.siteInfo()
@@ -182,6 +186,7 @@ func (s *Server) renderPostForm(c *gin.Context, errMsg string, editID int64, f p
 		"EditID":    editID,
 		"Title":     f.Title,
 		"Content":   f.Content,
+		"Summary":   f.Summary,
 		"CategoryID": f.CategoryID,
 		"PublishedAt": f.PublishedAtStr,
 		"Status":    f.Status,
@@ -198,7 +203,10 @@ func (s *Server) postCreate(c *gin.Context) {
 		s.renderPostForm(c, "标题和内容不能为空", 0, f)
 		return
 	}
-	id, err := s.store.CreatePost(f.Title, f.CategoryID, f.Content, f.PublishedAt, f.Status)
+	if f.Summary == "" {
+		f.Summary = store.GenSummary(f.Content) // 摘要留空时从正文自动生成
+	}
+	id, err := s.store.CreatePost(f.Title, f.CategoryID, f.Content, f.Summary, f.PublishedAt, f.Status)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "保存文章失败: %v", err)
 		return
@@ -236,6 +244,7 @@ func (s *Server) postEditPage(c *gin.Context) {
 		"EditID":    id,
 		"Title":     post.Title,
 		"Content":   post.Content,
+		"Summary":   post.Summary,
 		"CategoryID": post.CategoryID,
 		"PublishedAt": post.CreatedAt.Format("2006-01-02"),
 		"Status":    post.Status,
@@ -255,7 +264,10 @@ func (s *Server) postUpdate(c *gin.Context) {
 		s.renderPostForm(c, "标题和内容不能为空", id, f)
 		return
 	}
-	err = s.store.UpdatePost(id, f.Title, f.CategoryID, f.Content, f.PublishedAt, f.Status)
+	if f.Summary == "" {
+		f.Summary = store.GenSummary(f.Content)
+	}
+	err = s.store.UpdatePost(id, f.Title, f.CategoryID, f.Content, f.Summary, f.PublishedAt, f.Status)
 	if err == store.ErrNotFound {
 		c.HTML(http.StatusNotFound, "404.html", gin.H{"SiteTitle": pageTitle, "Favicon": favicon})
 		return

@@ -28,6 +28,9 @@ func main() {
 		log.Fatalf("初始化数据库失败: %v", err)
 	}
 	defer st.Close()
+	if err := st.BackfillSummaries(); err != nil {
+		log.Fatalf("回填文章摘要失败: %v", err)
+	}
 
 	srv := web.New(cfg, st)
 	log.Printf("博客启动中: http://localhost%s (数据库: %s, 上传目录: %s)",

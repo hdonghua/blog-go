@@ -19,6 +19,10 @@
                 <input type="text" name="title" value="{{.Title}}" placeholder="请输入文章标题" required>
             </div>
             <div class="form-row">
+                <label class="field-label">摘要（可选，留空将自动从正文生成）</label>
+                <input type="text" name="summary" value="{{.Summary}}" placeholder="一句话概括这篇文章…" maxlength="200">
+            </div>
+            <div class="form-row">
                 <div class="form-inline">
                     <select name="category_id">
                         <option value="0">未分类</option>

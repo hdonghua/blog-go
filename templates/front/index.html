@@ -34,6 +34,7 @@
                 {{range .Posts}}
                 <article class="item">
                     <a class="item-title" href="/post/{{.ID}}">{{.Title}}</a>
+                    {{if .Summary}}<p class="item-summary">{{.Summary}}</p>{{end}}
                     <div class="item-meta">
                         {{if .CategoryName}}<span class="badge">{{.CategoryName}}</span>{{end}}
                         <time>{{.CreatedAt | fmttime}}</time>

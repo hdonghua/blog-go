@@ -1,6 +1,7 @@
 package web
 
 import (
+	"mime"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -281,6 +282,39 @@ func (s *Server) postUpdate(c *gin.Context) {
 	} else {
 		c.Redirect(http.StatusFound, "/post/"+strconv.FormatInt(id, 10))
 	}
+}
+
+// postExport 导出文章 markdown 原文，文件名为「文章标题.md」。
+func (s *Server) postExport(c *gin.Context) {
+	id, _ := strconv.ParseInt(c.Param("id"), 10, 64)
+	post, err := s.store.GetPostForEdit(id)
+	if err == store.ErrNotFound {
+		c.HTML(http.StatusNotFound, "404.html", gin.H{"SiteTitle": "404"})
+		return
+	}
+	if err != nil {
+		c.String(http.StatusInternalServerError, "读取文章失败: %v", err)
+		return
+	}
+	// 清理文件名中的非法字符（Windows: \ / : * ? " < > | 及控制符）
+	safe := strings.Map(func(r rune) rune {
+		switch r {
+		case '\\', '/', ':', '*', '?', '"', '<', '>', '|':
+			return '_'
+		}
+		if r < 32 {
+			return -1
+		}
+		return r
+	}, strings.TrimSpace(post.Title))
+	if safe == "" {
+		safe = "文章-" + strconv.FormatInt(id, 10)
+	}
+	filename := safe + ".md"
+	disposition := mime.FormatMediaType("attachment", map[string]string{"filename": filename})
+	c.Header("Content-Disposition", disposition)
+	c.Header("Content-Type", "text/markdown; charset=utf-8")
+	c.String(http.StatusOK, post.Content)
 }
 
 func (s *Server) categoriesPage(c *gin.Context) {

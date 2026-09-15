@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -48,4 +49,25 @@ func (s *Server) uploadImage(c *gin.Context) {
 	}
 	// editor.md 约定的返回格式
 	c.JSON(http.StatusOK, gin.H{"success": 1, "url": url, "message": "上传成功"})
+}
+
+// postView 阅读量上报：前端停留 3 秒才请求；服务端再过滤爬虫 UA。
+func (s *Server) postView(c *gin.Context) {
+	ua := strings.ToLower(c.Request.UserAgent())
+	for _, bot := range []string{"bot", "spider", "crawl", "slurp"} {
+		if strings.Contains(ua, bot) {
+			c.Status(http.StatusNoContent)
+			return
+		}
+	}
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id <= 0 {
+		c.Status(http.StatusBadRequest)
+		return
+	}
+	if err := s.store.IncrPostViews(id); err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Status(http.StatusNoContent)
 }

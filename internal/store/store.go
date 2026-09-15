@@ -77,6 +77,7 @@ func (s *Store) migrate() error {
 			content     TEXT NOT NULL,
 			summary     TEXT NOT NULL DEFAULT '',
 			status      INTEGER NOT NULL DEFAULT 1,
+			views       INTEGER NOT NULL DEFAULT 0,
 			created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
 			FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET DEFAULT
@@ -99,6 +100,9 @@ func (s *Store) migrate() error {
 		return err
 	}
 	if err := s.ensureColumn("posts", "summary", `ALTER TABLE posts ADD COLUMN summary TEXT NOT NULL DEFAULT ''`); err != nil {
+		return err
+	}
+	if err := s.ensureColumn("posts", "views", `ALTER TABLE posts ADD COLUMN views INTEGER NOT NULL DEFAULT 0`); err != nil {
 		return err
 	}
 	return nil
@@ -326,7 +330,7 @@ func postsWhere(query string, categoryID int64, args *[]any) string {
 // ListPosts 前台文章列表（仅正式发布），支持搜索、分类过滤与分页。
 func (s *Store) ListPosts(query string, categoryID int64, limit, offset int) ([]Post, error) {
 	sqlStr := `SELECT p.id, p.title, p.category_id,
-		COALESCE(c.name, ''), COALESCE(p.summary, ''), p.created_at
+		COALESCE(c.name, ''), COALESCE(p.summary, ''), COALESCE(p.views, 0), p.created_at
 		FROM posts p LEFT JOIN categories c ON c.id = p.category_id`
 	args := []any{}
 	sqlStr += postsWhere(query, categoryID, &args)
@@ -340,7 +344,7 @@ func (s *Store) ListPosts(query string, categoryID int64, limit, offset int) ([]
 	var list []Post
 	for rows.Next() {
 		var p Post
-		if err := rows.Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Summary, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Summary, &p.Views, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, p)
@@ -361,7 +365,7 @@ func (s *Store) CountPosts(query string, categoryID int64) (int, error) {
 // ListAdminPosts 后台文章列表（含草稿，分页）。
 func (s *Store) ListAdminPosts(limit, offset int) ([]Post, error) {
 	rows, err := s.DB.Query(`SELECT p.id, p.title, p.category_id,
-		COALESCE(c.name, ''), COALESCE(p.summary, ''), p.status, p.created_at
+		COALESCE(c.name, ''), COALESCE(p.summary, ''), COALESCE(p.views, 0), p.status, p.created_at
 		FROM posts p LEFT JOIN categories c ON c.id = p.category_id
 		ORDER BY p.created_at DESC, p.id DESC LIMIT ? OFFSET ?`, limit, offset)
 	if err != nil {
@@ -371,7 +375,7 @@ func (s *Store) ListAdminPosts(limit, offset int) ([]Post, error) {
 	var list []Post
 	for rows.Next() {
 		var p Post
-		if err := rows.Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Summary, &p.Status, &p.CreatedAt); err != nil {
+		if err := rows.Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Summary, &p.Views, &p.Status, &p.CreatedAt); err != nil {
 			return nil, err
 		}
 		list = append(list, p)
@@ -414,10 +418,10 @@ func (s *Store) ListPostSitemap() ([]SitemapPost, error) {
 func (s *Store) GetPost(id int64) (*Post, error) {
 	p := &Post{}
 	err := s.DB.QueryRow(`SELECT p.id, p.title, p.category_id,
-		COALESCE(c.name, ''), p.content, p.created_at, p.updated_at
+		COALESCE(c.name, ''), p.content, COALESCE(p.views, 0), p.created_at, p.updated_at
 		FROM posts p LEFT JOIN categories c ON c.id = p.category_id
 		WHERE p.id = ? AND p.status = 1`, id).
-		Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Content, &p.CreatedAt, &p.UpdatedAt)
+		Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Content, &p.Views, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -442,10 +446,10 @@ func (s *Store) CreatePost(title string, categoryID int64, content, summary stri
 func (s *Store) GetPostForEdit(id int64) (*Post, error) {
 	p := &Post{}
 	err := s.DB.QueryRow(`SELECT p.id, p.title, p.category_id,
-		COALESCE(c.name, ''), p.content, COALESCE(p.summary, ''), p.status, p.created_at, p.updated_at
+		COALESCE(c.name, ''), p.content, COALESCE(p.summary, ''), COALESCE(p.views, 0), p.status, p.created_at, p.updated_at
 		FROM posts p LEFT JOIN categories c ON c.id = p.category_id
 		WHERE p.id = ?`, id).
-		Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Content, &p.Summary, &p.Status, &p.CreatedAt, &p.UpdatedAt)
+		Scan(&p.ID, &p.Title, &p.CategoryID, &p.CategoryName, &p.Content, &p.Summary, &p.Views, &p.Status, &p.CreatedAt, &p.UpdatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -488,6 +492,12 @@ func (s *Store) DeletePost(id int64) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+// IncrPostViews 已发布文章阅读量 +1。
+func (s *Store) IncrPostViews(id int64) error {
+	_, err := s.DB.Exec(`UPDATE posts SET views = views + 1 WHERE id = ? AND status = 1`, id)
+	return err
 }
 
 func escapeLike(s string) string {

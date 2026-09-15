@@ -38,6 +38,7 @@ type Post struct {
 	Content      string // markdown 原文
 	Summary      string // 摘要（可选，为空时前台从正文自动生成）
 	Status       int    // 0=草稿 1=正式发布
+	Views        int    // 阅读量
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

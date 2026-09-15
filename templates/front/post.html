@@ -33,6 +33,7 @@
             <div class="item-meta">
                 {{if .Post.CategoryName}}<span class="badge">{{.Post.CategoryName}}</span>{{end}}
                 <time>{{.Post.CreatedAt | fmttime}}</time>
+                <span>阅读 {{.Post.Views}}</span>
             </div>
         </div>
         <div class="post-content">
@@ -89,6 +90,34 @@
         btn.addEventListener('click', function () {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
+    })();
+</script>
+<script>
+    // 阅读量：累计可见停留满 3 秒才上报，同一浏览器当天同一篇只计一次
+    (function () {
+        var id = location.pathname.split('/').pop();
+        var key = 'blog_viewed_' + id;
+        var today = new Date().toISOString().slice(0, 10);
+        try {
+            if (localStorage.getItem(key) === today) return;
+        } catch (e) { return; }
+        var reported = false, timer = null;
+        function report() {
+            if (reported) return;
+            reported = true;
+            fetch('/api/view/' + id, { method: 'POST' }).catch(function () {});
+            try { localStorage.setItem(key, today); } catch (e) {}
+        }
+        function start() {
+            if (reported) return;
+            clearTimeout(timer);
+            timer = setTimeout(report, 3000);
+        }
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState === 'hidden') clearTimeout(timer);
+            else start();
+        });
+        start();
     })();
 </script>
 </body>

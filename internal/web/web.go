@@ -62,6 +62,7 @@ func (s *Server) Router() *gin.Engine {
 
 	// 图片 API（上传需登录，展示公开）
 	r.POST("/api/upload", s.requireLogin, s.uploadImage)
+	r.POST("/api/view/:id", s.postView)
 
 	// 后台
 	r.GET("/admin/login", s.loginPage)

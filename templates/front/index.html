@@ -43,6 +43,7 @@
                     <div class="item-meta">
                         {{if .CategoryName}}<span class="badge">{{.CategoryName}}</span>{{end}}
                         <time>{{.CreatedAt | fmttime}}</time>
+                        <span>阅读 {{.Views}}</span>
                     </div>
                 </article>
                 {{end}}

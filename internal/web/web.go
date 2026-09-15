@@ -53,6 +53,7 @@ func (s *Server) Router() *gin.Engine {
 	r.LoadHTMLGlob("templates/*/*.html")
 	r.Static("/static", "static")
 	r.Static("/uploads", s.cfg.Upload.Dir)
+	r.GET("/favicon.ico", s.serveFavicon)
 
 	// 前台
 	r.GET("/", s.frontIndex)

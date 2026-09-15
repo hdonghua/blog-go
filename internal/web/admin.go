@@ -504,20 +504,6 @@ func (s *Server) settingsSeoSave(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/admin/settings?saved=1")
 }
 
-// settingsFaviconUpload 上传网站图标（浏览器标签页图标）。
-func (s *Server) settingsFaviconUpload(c *gin.Context) {
-	imgURL, err := s.saveUploadedImage(c, "favicon")
-	if err != nil {
-		c.Redirect(http.StatusFound, "/admin/settings?err="+url.QueryEscape(err.Error()))
-		return
-	}
-	if err := s.store.SetSetting("favicon", imgURL); err != nil {
-		c.String(http.StatusInternalServerError, "保存网站图标失败: %v", err)
-		return
-	}
-	c.Redirect(http.StatusFound, "/admin/settings?saved=1")
-}
-
 const minPasswordLen = 6
 
 // settingsPassword 修改当前登录用户密码。

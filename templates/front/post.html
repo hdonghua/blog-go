@@ -32,8 +32,14 @@
             <h1 class="post-title">{{.Post.Title}}</h1>
             <div class="item-meta">
                 {{if .Post.CategoryName}}<span class="badge">{{.Post.CategoryName}}</span>{{end}}
-                <time>{{.Post.CreatedAt | fmttime}}</time>
-                <span>阅读 {{.Post.Views}}</span>
+                <time class="meta-item" title="发布日期">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    {{.Post.CreatedAt | fmttime}}
+                </time>
+                <span class="meta-item" title="阅读量">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    {{.Post.Views}}
+                </span>
             </div>
         </div>
         <div class="post-content">

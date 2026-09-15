@@ -203,6 +203,13 @@ body {
     color: var(--text-3);
 }
 
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.meta-item svg { opacity: .75; }
+
 .badge {
     padding: 2px 10px;
     border-radius: 999px;
